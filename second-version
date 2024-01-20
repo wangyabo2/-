@@ -1,0 +1,241 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+
+#define MAX_NODES 1000
+#define MAX_EDGES 5000
+
+typedef struct {
+    int nodeID;
+    bool activated;
+    double activationProbability;
+} Node;
+
+typedef struct {
+    int source;
+    int target;
+    double influence;
+} Edge;
+
+Node nodes[MAX_NODES];
+Edge edges[MAX_EDGES];
+int numNodes = 0;
+int numEdges = 0;
+
+void initializeNetwork() {
+    // 初始化网络，包括节点和边的信息
+    // 在这里可以根据实际情况进行初始化
+    // 例如，从文件中读取节点和边的信息
+    // 并将其存储在nodes和edges数组中
+    // 设置节点的初始激活状态为false
+    // 更新numNodes和numEdges的值
+    numNodes = 10;
+    numEdges = 15;
+
+    // 初始化节点
+    for (int i = 0; i < numNodes; i++) {
+        nodes[i].nodeID = i;
+        nodes[i].activated = false;
+    }
+
+    // 初始化边
+    edges[0].source = 0;
+    edges[0].target = 1;
+    edges[0].influence = 0.5;
+    edges[1].source = 0;
+    edges[1].target = 2;
+    edges[1].influence = 0.7;
+    edges[2].source = 1;
+    edges[2].target = 3;
+    edges[2].influence = 0.8;
+    edges[3].source = 1;
+    edges[3].target = 4;
+    edges[3].influence = 0.6;
+    edges[4].source = 2;
+    edges[4].target = 3;
+    edges[4].influence = 0.9;
+    edges[5].source = 2;
+    edges[5].target = 5;
+    edges[5].influence = 0.5;
+    edges[6].source = 3;
+    edges[6].target = 6;
+    edges[6].influence = 0.7;
+    edges[7].source = 4;
+    edges[7].target = 7;
+    edges[7].influence = 0.6;
+    edges[8].source = 5;
+    edges[8].target = 6;
+    edges[8].influence = 0.8;
+    edges[9].source = 5;
+    edges[9].target = 8;
+    edges[9].influence = 0.7;
+    edges[10].source = 6;
+    edges[10].target = 9;
+    edges[10].influence = 0.6;
+    edges[11].source = 7;
+    edges[11].target = 9;
+    edges[11].influence = 0.9;
+    edges[12].source = 8;
+    edges[12].target = 9;
+    edges[12].influence = 0.8;
+    edges[13].source = 8;
+    edges[13].target = 7;
+    edges[13].influence = 0.5;
+    edges[14].source = 9;
+    edges[14].target = 7;
+    edges[14].influence = 0.7;
+}
+
+void activateSeedNodes(int seedNodes[], int numSeedNodes) {
+    // 激活种子节点
+    for (int i = 0; i < numSeedNodes; i++) {
+        int nodeID = seedNodes[i];
+        nodes[nodeID].activated = true;
+    }
+}
+
+bool isNodeActivated(int nodeID) {
+    // 检查节点是否已被激活
+    return nodes[nodeID].activated;
+}
+
+double calculateNodeInfluence(int nodeID) {
+    // 计算节点的影响力
+    // 这里可以使用某种算法或模型来计算节点的影响力
+    // 可以基于节点的度中心性、介数中心性或其他指标进行估计
+    // 这里假设所有节点的影响力都为0.5
+    return 0.5;
+}
+
+void calculateActivationProbabilities() {
+    // 计算每个节点的激活概率
+    for (int i = 0; i < numNodes; i++) {
+        nodes[i].activationProbability = calculateNodeInfluence(i);
+    }
+}
+
+bool tryActivateNode(int nodeID) {
+    // 尝试激活节点
+    // 生成一个随机概率值
+    // 如果激活概率大于等于随机值，则激活节点
+    // 返回true表示成功激活节点，否则返回false
+    double activationProbability = nodes[nodeID].activationProbability;
+    double randomValue = (double)rand() / RAND_MAX; // 生成随机概率值
+
+    if (activationProbability >= randomValue) {
+        nodes[nodeID].activated = true;
+        return true;
+    }
+
+    return false;
+}
+
+void independentCascadeModel(int seedNodes[], int numSeedNodes) {
+    activateSeedNodes(seedNodes, numSeedNodes);
+
+    while (true) {
+        bool activatedNodeFound = false;
+
+        for (int i = 0; i < numEdges; i++) {
+            int sourceNodeID = edges[i].source;
+            int targetNodeID = edges[i].target;
+
+            if (isNodeActivated(sourceNodeID) && !isNodeActivated(targetNodeID)) {
+                double influence = edges[i].influence;
+                double randomValue = (double)rand() / RAND_MAX; // 生成随机概率值
+
+                if (influence >= randomValue) {
+                    nodes[targetNodeID].activated = true;
+                    activatedNodeFound = true;
+                }
+            }
+        }
+
+        if (!activatedNodeFound) {
+            break;
+        }
+    }
+}
+
+int countActivatedNodes() {
+    int activatedCount = 0;
+
+    for (int i = 0; i < numNodes; i++) {
+        if (nodes[i].activated) {
+            activatedCount++;
+        }
+    }
+
+    return activatedCount;
+}
+
+int* selectSeedNodes(int numSeedNodes) {
+    // 使用贪心算法选择种子节点
+    int* seedNodes = (int*)malloc(numSeedNodes * sizeof(int));
+    bool* visited = (bool*)malloc(numNodes * sizeof(bool));
+    double* influenceSum = (double*)malloc(numNodes * sizeof(double));
+
+    for (int i = 0; i < numNodes; i++) {
+        visited[i] = false;
+        influenceSum[i] = 0.0;
+    }
+
+    for (int k = 0; k < numSeedNodes; k++) {
+        int maxNodeID = -1;
+        double maxInfluence = -1.0;
+
+        for (int i = 0; i < numNodes; i++) {
+            if (!visited[i]) {
+                double influence = 0.0;
+
+                for (int j = 0; j < numEdges; j++) {
+                    if (edges[j].target == i) {
+                        influence += edges[j].influence;
+                    }
+                }
+
+                if (influence > maxInfluence) {
+                    maxNodeID = i;
+                    maxInfluence = influence;
+                }
+            }
+        }
+
+        seedNodes[k] = maxNodeID;
+        visited[maxNodeID] = true;
+
+        for (int i = 0; i < numEdges; i++) {
+            if (edges[i].source == maxNodeID) {
+                int targetNodeID = edges[i].target;
+                influenceSum[targetNodeID] += edges[i].influence;
+            }
+        }
+    }
+
+    free(visited);
+    free(influenceSum);
+
+    return seedNodes;
+}
+
+int main() {
+    srand(time(NULL));
+
+    initializeNetwork();
+
+    int numSeedNodes = 3; // 设置种子节点数量
+    int* seedNodes = selectSeedNodes(numSeedNodes);
+
+    calculateActivationProbabilities();
+
+    independentCascadeModel(seedNodes, numSeedNodes);
+
+    int activatedCount = countActivatedNodes();
+
+    printf("Activated nodes: %d\n", activatedCount);
+
+    free(seedNodes);
+
+    return 0;
+}
